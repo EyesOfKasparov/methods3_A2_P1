@@ -1,7 +1,7 @@
 ---
 title: "Assignment 2 - Language Development in ASD - Part 1 - Explaining development"
-author: "[YOUR NAME]"
-date: "[DATE]"
+author: "Study group 2"
+date: "2020-09-10"
 output: html_document
 ---
     
@@ -75,7 +75,7 @@ Load necessary libraries : what will you need?
 - e.g. something to plot with
 
 ```{r Load Libraries, include = FALSE}
-
+pacman::p_load(tidyverse, broomr)
 ```
 
 ### Define your working directory and load the data
