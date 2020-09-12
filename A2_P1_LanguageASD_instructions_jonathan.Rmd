@@ -94,8 +94,10 @@ df <- read_csv("final_data.csv")
 
 df <- df %>% 
   mutate(Gender = if_else(Gender == "M", "F", "M"), 
-         # Sorting gender into white and other
-         Ethnicity = if_else(str_detect(tolower(Ethnicity), "white"), "White", "Other"))
+         # Sorting ethnicity into white and other
+         Ethnicity = if_else(str_detect(tolower(Ethnicity), "white"), "White", "Other")) %>% 
+  # For comparing models
+  drop_na()
 
 ```
 
@@ -243,21 +245,27 @@ Linguistic development of children MLU is affected by ... [COMPLETE]
 ### Hypothesis: Parental MLU changes: i) over time, ii) according to diagnosis
 
 ```{r ex3, include = FALSE}
+m_parent <- lmer(MOT_MLU ~ VISIT + Diagnosis + Diagnosis*VISIT + (1 + VISIT|ID), 
+                 data = df)
+summary(m_parent)
 
 ```
 
-Parent MLU is affected by ... but probably not ...
-[REPORT THE RESULTS]
+Parent MLU is affected by both time (beta = 0.099, df = 57.19, t = 3.738, p < 0.01) and Diagnosis with parents talking more to typically developed children (beta = 0.356, df = 57.91, t = 2.024, p < 0.05) but there's no significant evidence of interaction between time and diagnosis (df = 57.68, t = 1.096, p > 0.05)
 
 ### Adding new variables (Exercise 4)
 
 Your task now is to figure out how to best describe the children linguistic trajectory. The dataset contains a bunch of additional demographic, cognitive and clinical variables (e.g.verbal and non-verbal IQ). Try them out and identify the statistical models that best describes your data (that is, the children's MLU). Describe how you selected the best model and send the code to run the model to Victor and Byurakn.
 
 
+
+To select the best model, we create a (practically) maximal model including all main effects and two-way interactions. We then used the "step()"-function to iteratively remove unnecessary predictors, creating an impressively explainable model. However, it is important to note that the model is severely overfit (probably), but we will tackle that next week :)). 
 ```{r ex4, include = FALSE}
 library(MASS)
 
-
+# Rescaling for modelling
+df <- df %>% 
+  mutate(across(where(is.numeric), scale))
 
 
 names(df)
@@ -274,16 +282,23 @@ besty_model <- lmer(CHI_MLU ~ VISIT + Diagnosis + Ethnicity + Gender + Age + ADO
     Ethnicity:ExpressiveLangRaw + Ethnicity:Socialization + Age:ADOS + 
     Age:Socialization + ADOS:ExpressiveLangRaw + MullenRaw:MOT_MLU + (1 | ID), data=df)
 
+
 summary(besty_model)
 
-
+?tidy
+anova(m1, cube_model, besty_model)
 
 MuMIn::r.squaredGLMM(besty_model)
 
-
 ```
 
-In addition to ..., the MLU of the children is also correlated with ...
-Using AIC / nested F-tests as a criterium, we compared models of increasing complexity and found that ...
+In addition to the previously mentioned effects, the MLU of the children is also explained by Verbal IQ (Beta=0.87, df=49.63, t=6.4, p<0.001), the interaction between time and age (Beta=-0.14, df=285.78, t= -4.398, p<0.001), the interaction between time and severity of autism (Beta=-0.68, df=88.24, t=-4.832, p<0.001), the interaction between time and sociability (Beta-0.27, df=80.35, t=-3.027, p<0.01), the interaction between diagnosis and verbal IQ (Beta=0.87, df=47.54, t=-3.494, p<0.01), the interaction between diagnosis and Mother MLU (Beta=-0.23, df=317.30, t=3.190, p<0.01), the interaction between age and autistic severity (Beta=0.57, df=58.66, t=3.114, p<0.01), the interaction between age and sociability (Beta=0.33, df=46.67, t=2.973, p<0.01), the interaction between autistic severity and verbal IQ (Beta=-0.33, df=47.29, t=-2.388, p<0.05), and the interaction between spatial IQ and MLU of the mother (Beta=0.10355, df=319.80, t=2.922, p<0.01).  
+Using AIC / nested F-tests as a criterium, we compared models of increasing complexity and found that an elaborate model of the form CHI_MLU ~ VISIT + Diagnosis + Ethnicity + Gender + Age + ADOS +  
+    MullenRaw + ExpressiveLangRaw + Socialization + MOT_MLU +  
+    VISIT:Diagnosis + VISIT:Age + VISIT:ADOS + VISIT:Socialization +  
+    Diagnosis:Ethnicity + Diagnosis:ExpressiveLangRaw + Diagnosis:MOT_MLU +  
+    Ethnicity:Gender + Ethnicity:ADOS + Ethnicity:MullenRaw +  
+    Ethnicity:ExpressiveLangRaw + Ethnicity:Socialization + Age:ADOS +  
+    Age:Socialization + ADOS:ExpressiveLangRaw + MullenRaw:MOT_MLU + (1 | ID), performed significantly better than both baseline and simpler models. The full model had a marginal R^2 of 0.76 and a conditional R^2 of 0.84, thus accurately describing the data.
 
 [REPORT THE RESULTS]
