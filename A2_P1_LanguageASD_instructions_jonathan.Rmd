@@ -114,12 +114,12 @@ Describe the characteristics of the two groups of participants and whether the t
 # Plotting intelligence distributions # 
 ggplot(df, aes(y = MullenRaw, x = Diagnosis)) + 
   geom_boxplot() + 
-  labs(Title = "Non-verbal intelligence distribution") + 
+  labs(title = "Non-verbal intelligence distribution") + 
   theme_minimal()
 
 ggplot(df, aes(y = ExpressiveLangRaw, x = Diagnosis)) + 
   geom_boxplot() + 
-  labs(Title = "Non-verbal intelligence distribution") + 
+  labs(title = "Non-verbal intelligence distribution") + 
   theme_minimal()
 
 
