@@ -112,15 +112,33 @@ Describe the characteristics of the two groups of participants and whether the t
 ```{r descriptive stats, include = TRUE}
 
 # Plotting intelligence distributions # 
-ggplot(df, aes(y = MullenRaw, x = Diagnosis)) + 
+non_verbal_plot <- ggplot(df, aes(y = MullenRaw, x = Diagnosis)) + 
   geom_boxplot() + 
-  labs(title = "Non-verbal intelligence distribution") + 
+  labs(title = "Non-verbal intelligence comparison", 
+       y = "Non-verbal IQ-scoreScore") + 
   theme_minimal()
 
-ggplot(df, aes(y = ExpressiveLangRaw, x = Diagnosis)) + 
+verbal_intelligence_plot <- ggplot(df, aes(y = ExpressiveLangRaw, x = Diagnosis)) + 
   geom_boxplot() + 
-  labs(title = "Non-verbal intelligence distribution") + 
+  labs(title = "Verbal intelligence comparison", 
+       y = "Verbal IQ-score") + 
   theme_minimal()
+
+Socialization_plot <- ggplot(df, aes(y = Socialization, x = Diagnosis)) + 
+  geom_boxplot() + 
+  labs(title = "Socialization comparison", 
+       y = "Socialization score") + 
+  theme_minimal()
+
+tokens_plot <- ggplot(df, aes(y = tokens_CHI, x = Diagnosis)) + 
+  geom_violin() + 
+  labs(title = "Words used comparison", 
+       y = "Unique Words Used") + 
+  theme_minimal()
+
+score_plot <- ggpubr::ggarrange(non_verbal_plot, verbal_intelligence_plot, Socialization_plot, tokens_plot)
+
+ggsave("score_plot.png", score_plot)
 
 
 # Demographics compared 
@@ -129,7 +147,8 @@ df %>%
   summarise(mean_age = mean(Age, na.rm=T),
             sd_age = sd(Age, na.rm = T),
             pct_male = sum(Gender == "M") / n(), 
-            pct_white = sum(str_detect(tolower(Ethnicity), "white")) / n())
+            pct_white = sum(str_detect(tolower(Ethnicity), "white")) / n()) %>% 
+  mutate(across(where(is.numeric), .fns = ~round(.x, 2)))
 
 
 ```
@@ -149,13 +168,15 @@ Remember to plot the data first and then to run a statistical test.
 
 ```{r ex2, include = T}
 # First we evaluate the hypotheses graphically using a scatter plot
-ggplot(df, aes(x = VISIT, y = CHI_MLU, colour = Diagnosis)) + 
+hyp1_plot <- ggplot(df, aes(x = VISIT, y = CHI_MLU, colour = Diagnosis)) + 
   geom_point() + 
   geom_smooth(method = "lm") + 
   labs(title = "Development over time for ASD vs TD children", 
        x = "Visit number",
        y = "Mean Length of Utterance") + 
   theme_minimal()
+
+ggsave("hyp1_plot.png", hyp1_plot)
 ```
 
 Graphically, both hypotheses seem to hold: There is a positive slope for both models and the slope for TD is steeper than the ASD slope. However, the plot breaks the assumption of independence. Thus, we need to run a mixed effects model. 
@@ -165,7 +186,7 @@ For the model we will use "Diagnosis", "VISIT", and their interaction as as fixe
 m1 <- lmer(CHI_MLU ~ Diagnosis + VISIT + Diagnosis*VISIT + (1|ID), data=df)
 summary(m1)
 
-```
+  ```
 
 
 
@@ -211,16 +232,18 @@ predictions <- fitted(cube_model) %>%
 viz_df <- df %>% 
   mutate(row_num = as.character(row_number())) %>% 
   right_join(predictions) %>% 
-  select(row_num, CHI_MLU, pred)
+  select(row_num, CHI_MLU, pred, Diagnosis)
 
-ggplot(viz_df, aes(x = CHI_MLU, y = pred)) + 
-  geom_point() + 
-  geom_smooth() + 
+actual_vs_pred <- ggplot(viz_df, aes(x = CHI_MLU, y = pred)) + 
+  geom_point(aes(color = Diagnosis)) + 
+  geom_smooth(color="black") + 
   labs(title = "Actual vs Predicted MLU", 
        subtitle = "Cubed model", 
        x = "Actual MLU",
        y = "Modelled MLU") + 
   theme_minimal()
+
+ggsave("act_vs_pred.png", actual_vs_pred)
 
 
 anova(m1, quadratic_model, cube_model)
@@ -249,7 +272,7 @@ summary(m_parent)
 
 ```
 
-Parent MLU is affected by both time (beta = 0.099, df = 57.19, t = 3.738, p < 0.01) and Diagnosis with parents talking more to typically developed children (beta = 0.356, df = 57.91, t = 2.024, p < 0.05) but there's no significant evidence of interaction between time and diagnosis (df = 57.68, t = 1.096, p > 0.05)
+  Parent MLU is affected by both time (beta = 0.099, df = 57.19, t = 3.738, p < 0.01) and Diagnosis with parents talking more to typically developed children (beta = 0.356, df = 57.91, t = 2.024, p < 0.05) but there's no significant evidence of interaction between time and diagnosis (df = 57.68, t = 1.096, p > 0.05)
 
 ### Adding new variables (Exercise 4)
 
